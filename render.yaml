@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: bitsio-aiops-server
+    env: node
+    rootDir: .
+    plan: free
+    buildCommand: npm install && npm run build -w @bitsio/server
+    startCommand: npm run start -w @bitsio/server
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LLM_RUNTIME
+        value: openrouter
+      - key: OPENROUTER_MODEL
+        value: openai/gpt-4o-mini

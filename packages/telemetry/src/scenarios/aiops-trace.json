@@ -1,0 +1,39 @@
+{
+  "id": "aiops-trace",
+  "title": "AIOps Trace",
+  "summary": "Investigate payment latency spike with autonomous remediation.",
+  "expectedFlow": [
+    "trigger",
+    "context_retrieval",
+    "reasoning",
+    "policy_check",
+    "action_execution",
+    "outcome"
+  ],
+  "docs": [
+    "Runbook: payment-api connection pool",
+    "SLO target: p95 latency < 450ms",
+    "Policy: rollback when error rate > 45%"
+  ],
+  "telemetry": {
+    "service": "payment-api",
+    "latencyP95": 2100,
+    "errorRate": 0.34,
+    "traceId": "trc-aiops-001",
+    "metricsSeries": [
+      { "timestamp": "2026-04-06T10:00:00.000Z", "latencyP95": 420, "errorRate": 0.03, "throughput": 560 },
+      { "timestamp": "2026-04-06T10:01:00.000Z", "latencyP95": 740, "errorRate": 0.07, "throughput": 540 },
+      { "timestamp": "2026-04-06T10:02:00.000Z", "latencyP95": 1320, "errorRate": 0.19, "throughput": 505 },
+      { "timestamp": "2026-04-06T10:03:00.000Z", "latencyP95": 2100, "errorRate": 0.34, "throughput": 460 }
+    ],
+    "logs": [
+      { "timestamp": "2026-04-06T10:03:01.000Z", "service": "payment-api", "severity": "error", "message": "DB pool timeout after 5000ms", "traceId": "trc-aiops-001" },
+      { "timestamp": "2026-04-06T10:03:02.000Z", "service": "payment-api", "severity": "warn", "message": "Retry storm detected from checkout-service", "traceId": "trc-aiops-001" },
+      { "timestamp": "2026-04-06T10:03:04.000Z", "service": "payment-worker", "severity": "info", "message": "Queue backlog exceeded threshold", "traceId": "trc-aiops-001" }
+    ],
+    "traces": [
+      { "traceId": "trc-aiops-001", "service": "payment-api", "spanCount": 18, "durationMs": 2440, "status": "failed" },
+      { "traceId": "trc-aiops-002", "service": "checkout-service", "spanCount": 13, "durationMs": 1410, "status": "degraded" }
+    ]
+  }
+}

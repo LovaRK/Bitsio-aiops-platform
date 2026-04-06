@@ -1,0 +1,39 @@
+{
+  "id": "financial-services",
+  "title": "Financial Services",
+  "summary": "Respond to fraud-model drift impacting approvals and settlement latency.",
+  "expectedFlow": [
+    "trigger",
+    "context_retrieval",
+    "reasoning",
+    "policy_check",
+    "action_execution",
+    "outcome"
+  ],
+  "docs": [
+    "Fraud model drift playbook",
+    "Compliance requirement: audit every automated decision",
+    "PCI incident communication policy"
+  ],
+  "telemetry": {
+    "service": "fraud-api",
+    "latencyP95": 1650,
+    "errorRate": 0.21,
+    "traceId": "trc-fin-001",
+    "metricsSeries": [
+      { "timestamp": "2026-04-06T12:00:00.000Z", "latencyP95": 790, "errorRate": 0.06, "throughput": 620 },
+      { "timestamp": "2026-04-06T12:01:00.000Z", "latencyP95": 1010, "errorRate": 0.11, "throughput": 605 },
+      { "timestamp": "2026-04-06T12:02:00.000Z", "latencyP95": 1380, "errorRate": 0.16, "throughput": 590 },
+      { "timestamp": "2026-04-06T12:03:00.000Z", "latencyP95": 1650, "errorRate": 0.21, "throughput": 565 }
+    ],
+    "logs": [
+      { "timestamp": "2026-04-06T12:03:01.000Z", "service": "fraud-api", "severity": "warn", "message": "Model confidence entropy exceeds threshold", "traceId": "trc-fin-001" },
+      { "timestamp": "2026-04-06T12:03:02.000Z", "service": "ledger-api", "severity": "error", "message": "Settlement queue lock wait timeout", "traceId": "trc-fin-001" },
+      { "timestamp": "2026-04-06T12:03:05.000Z", "service": "risk-worker", "severity": "info", "message": "Fallback ruleset engaged for tier-1 accounts", "traceId": "trc-fin-001" }
+    ],
+    "traces": [
+      { "traceId": "trc-fin-001", "service": "fraud-api", "spanCount": 24, "durationMs": 1880, "status": "degraded" },
+      { "traceId": "trc-fin-002", "service": "ledger-api", "spanCount": 16, "durationMs": 2025, "status": "failed" }
+    ]
+  }
+}
