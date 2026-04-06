@@ -84,6 +84,7 @@ npm run test
 npm run typecheck
 npm run lint
 npm run build
+npm run smoke:server
 ```
 
 Unit tests include:
@@ -141,3 +142,12 @@ Option B: Manual setup:
 - Recommended low-cost model for OpenRouter:
   - `openai/gpt-4o-mini`
 - Estimated LLM spend target remains under `$20/month` for demo traffic.
+
+## CI
+
+- GitHub Actions workflow: `.github/workflows/ci.yml`
+- Runs on push/PR:
+  - `npm run test`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
