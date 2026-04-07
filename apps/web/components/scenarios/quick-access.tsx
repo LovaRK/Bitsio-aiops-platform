@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 
-import type { ScenarioId, ScenarioSummary } from "../types/api";
+import type { ScenarioId, ScenarioSummary } from "../../types/api";
 
 const SCENARIO_BADGES: Record<ScenarioId, string> = {
   "aiops-trace": "✨ AIOps Trace",

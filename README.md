@@ -32,6 +32,12 @@ Production-ready AIOps web platform for bitsIO Inc. with AI-driven observability
 /docs
 ```
 
+Detailed onboarding maps:
+
+- `apps/web/README.md`
+- `apps/server/README.md`
+- `docs/architecture/project-structure.md`
+
 ## Quick Start
 
 1. Install dependencies:
@@ -42,7 +48,13 @@ npm install
 
 2. Create `.env` at repo root from `.env.example`.
 
-3. Run development stack:
+3. Validate env setup before running:
+
+```bash
+npm run check:env
+```
+
+4. Run development stack:
 
 ```bash
 npm run dev
@@ -87,6 +99,7 @@ npm run typecheck
 npm run lint
 npm run build
 npm run smoke:server
+npm run check:env
 ```
 
 Unit tests include:
@@ -160,3 +173,5 @@ Option B: Manual setup:
   - `docs/handoff-roadmap.md`
 - Agent continuation prompt:
   - `docs/agentic-master-prompt.md`
+- Deployment readiness checklist:
+  - `docs/deployment/cto-demo-checklist.md`

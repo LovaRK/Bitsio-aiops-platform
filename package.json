@@ -13,7 +13,9 @@
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "verify": "npm run test && npm run typecheck && npm run lint && npm run build",
-    "smoke:server": "node scripts/smoke-server.mjs"
+    "smoke:server": "node scripts/smoke-server.mjs",
+    "check:env": "node scripts/validate-env.mjs --target all --mode local",
+    "check:env:prod": "node scripts/validate-env.mjs --target all --mode production --source process"
   },
   "devDependencies": {
     "@types/node": "^22.15.2",

@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 
-import type { AIReasoning, TimelineStep } from "../types/api";
+import type { AIReasoning, TimelineStep } from "../../types/api";
 
 interface TimelinePanelProps {
   steps: TimelineStep[];

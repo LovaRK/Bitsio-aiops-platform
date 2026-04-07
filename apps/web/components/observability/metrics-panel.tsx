@@ -11,7 +11,7 @@ import {
   YAxis
 } from "recharts";
 
-import type { TelemetrySnapshot } from "../types/api";
+import type { TelemetrySnapshot } from "../../types/api";
 
 interface MetricsPanelProps {
   telemetry: TelemetrySnapshot | null;

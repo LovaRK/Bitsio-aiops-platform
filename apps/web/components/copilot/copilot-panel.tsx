@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 
-import type { ChatMessage } from "../types/api";
+import type { ChatMessage } from "../../types/api";
 
 interface CopilotPanelProps {
   messages: ChatMessage[];

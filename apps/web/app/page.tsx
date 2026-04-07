@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo } from "react";
 
-import { CopilotPanel } from "../components/copilot-panel";
-import { LogsPanel } from "../components/logs-panel";
-import { MetricsPanel } from "../components/metrics-panel";
-import { QuickAccess } from "../components/quick-access";
-import { TimelinePanel } from "../components/timeline-panel";
-import { TracePanel } from "../components/trace-panel";
+import {
+  CopilotPanel,
+  LogsPanel,
+  MetricsPanel,
+  QuickAccess,
+  TimelinePanel,
+  TracePanel
+} from "../components";
 import { useAuthSession } from "../hooks/use-auth-session";
 import { useAIOpsStore } from "../store/use-aiops-store";
 import type { ScenarioId } from "../types/api";

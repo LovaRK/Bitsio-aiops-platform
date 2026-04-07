@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 
-import type { TraceRecord } from "../types/api";
+import type { TraceRecord } from "../../types/api";
 
 interface TracePanelProps {
   traces: TraceRecord[];

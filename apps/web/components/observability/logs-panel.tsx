@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import { memo } from "react";
 
-import type { LogEntry } from "../types/api";
+import type { LogEntry } from "../../types/api";
 
 interface LogsPanelProps {
   logs: LogEntry[];
