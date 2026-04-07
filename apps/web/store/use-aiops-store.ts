@@ -2,18 +2,15 @@
 
 import { create } from "zustand";
 
+import { createAIOpsUseCases } from "../application/create-aiops-usecases";
+import type { SessionState } from "../domain/session";
+import { aiopsHttpGateway } from "../infra/http/aiops-http-gateway";
 import { isLocalDemoMode } from "../lib/app-mode";
-import { chatWithCopilot, fetchScenarios, runScenario, upsertSession } from "../lib/api";
 import { streamTimelineSteps } from "../lib/timeline-playback";
 import type { ChatMessage, ScenarioId, ScenarioRunResponse, ScenarioSummary, TimelineStep } from "../types/api";
 
 let cancelTimelinePlayback: (() => void) | null = null;
-
-export interface SessionState {
-  uid: string;
-  email?: string;
-  mode: "guest" | "auth" | "none";
-}
+const aiopsUseCases = createAIOpsUseCases(aiopsHttpGateway);
 
 interface AIOpsState {
   scenarios: ScenarioSummary[];
@@ -48,7 +45,7 @@ export const useAIOpsStore = create<AIOpsState>((set, get) => ({
   },
   loadScenarios: async () => {
     try {
-      const scenarios = await fetchScenarios();
+      const scenarios = await aiopsUseCases.loadScenarios();
       set({
         scenarios,
         activeScenarioId: scenarios[0]?.id ?? null,
@@ -68,7 +65,7 @@ export const useAIOpsStore = create<AIOpsState>((set, get) => ({
     });
 
     try {
-      const runData = await runScenario(id);
+      const runData = await aiopsUseCases.executeScenario(id);
 
       set({
         runData,
@@ -125,7 +122,7 @@ export const useAIOpsStore = create<AIOpsState>((set, get) => ({
     set({ chatMessages: nextMessages, chatBusy: true });
 
     try {
-      const response = await chatWithCopilot(scenarioId, normalized, nextMessages);
+      const response = await aiopsUseCases.askCopilot(scenarioId, normalized, nextMessages);
       set((current) => ({
         chatMessages: [
           ...current.chatMessages,
@@ -160,11 +157,7 @@ export const useAIOpsStore = create<AIOpsState>((set, get) => ({
 
     if (session.mode !== "none") {
       try {
-        await upsertSession({
-          uid: session.uid,
-          email: session.email,
-          mode: session.mode
-        });
+        await aiopsUseCases.syncSession(session);
       } catch {
         set({
           lastError: "Session sync failed"

@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { isLocalDemoMode } from "../lib/app-mode";
 import { auth, isFirebaseConfigured } from "../lib/firebase";
 import { AUTH_EMAIL_KEY, getOrCreateGuestId } from "../lib/session";
-import type { SessionState } from "../store/use-aiops-store";
+import type { SessionState } from "../domain/session";
 
 type AuthState = "local-demo" | "firebase-enabled" | "firebase-missing";
 
