@@ -151,3 +151,10 @@ Option B: Manual setup:
   - `npm run typecheck`
   - `npm run lint`
   - `npm run build`
+
+## Handoff Docs
+
+- Implementation status and pending roadmap:
+  - `docs/handoff-roadmap.md`
+- Agent continuation prompt:
+  - `docs/agentic-master-prompt.md`
