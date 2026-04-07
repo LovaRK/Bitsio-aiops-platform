@@ -31,7 +31,7 @@ export default function HomePage() {
     setSession
   } = useAIOpsStore();
 
-  const { authEnabled, emailInput, setEmailInput, authNote, onGuestMode, onSendMagicLink, onSignOut } =
+  const { authEnabled, authState, emailInput, setEmailInput, authNote, onGuestMode, onSendMagicLink, onSignOut } =
     useAuthSession(setSession);
 
   const telemetry = runData?.scenario.telemetry ?? null;
@@ -109,7 +109,7 @@ export default function HomePage() {
               </>
             ) : (
               <span className="rounded-lg border border-teal/40 bg-teal/10 px-3 py-2 text-xs font-semibold text-teal">
-                Local Demo Mode
+                {authState === "local-demo" ? "Local Demo Mode" : "Guest Mode (Firebase Missing)"}
               </span>
             )}
           </div>

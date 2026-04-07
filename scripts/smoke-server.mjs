@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const baseUrl = process.env.BASE_URL ?? "http://localhost:8080";
+const requestTimeoutMs = Number(process.env.REQUEST_TIMEOUT_MS ?? 15_000);
 
 const checks = [
   {
@@ -45,7 +46,9 @@ if (failures > 0) {
 console.log("Smoke checks passed.");
 
 async function getJson(url) {
-  const response = await fetch(url);
+  const response = await fetchWithTimeout(url, {
+    method: "GET"
+  });
   if (!response.ok) {
     throw new Error(`GET ${url} failed with ${response.status}`);
   }
@@ -53,7 +56,7 @@ async function getJson(url) {
 }
 
 async function postJson(url, body) {
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -66,6 +69,25 @@ async function postJson(url, body) {
   }
 
   return response.json();
+}
+
+async function fetchWithTimeout(url, init) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort("timeout"), requestTimeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`${init.method ?? "GET"} ${url} timed out after ${requestTimeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function summarize(result) {

@@ -17,6 +17,11 @@ import type { SessionState } from "../store/use-aiops-store";
 export function useAuthSession(setSession: (session: SessionState) => Promise<void>) {
   const [emailInput, setEmailInput] = useState("");
   const [authNote, setAuthNote] = useState("Guest demo mode available");
+  const authState = isLocalDemoMode
+    ? "local-demo"
+    : isFirebaseConfigured
+      ? "firebase-enabled"
+      : "firebase-missing";
 
   useEffect(() => {
     if (isLocalDemoMode) {
@@ -134,7 +139,8 @@ export function useAuthSession(setSession: (session: SessionState) => Promise<vo
   };
 
   return {
-    authEnabled: !isLocalDemoMode && isFirebaseConfigured,
+    authEnabled: authState === "firebase-enabled",
+    authState,
     emailInput,
     setEmailInput,
     authNote,
