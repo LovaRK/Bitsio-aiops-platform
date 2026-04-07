@@ -11,7 +11,17 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 8080
       - key: LLM_RUNTIME
         value: openrouter
+      - key: OPENROUTER_API_KEY
+        value: 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
       - key: OPENROUTER_MODEL
         value: openai/gpt-4o-mini
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: FIRESTORE_ENABLED
+        value: "false"
+      - key: FIREBASE_PROJECT_ID
+        value: bitsio-aiops
