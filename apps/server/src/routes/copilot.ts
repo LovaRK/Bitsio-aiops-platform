@@ -13,6 +13,7 @@ const chatInputSchema = z.object({
         content: z.string().min(1).max(2000)
       })
     )
+    .max(12)
     .default([])
 });
 
@@ -26,11 +27,22 @@ export function registerCopilotRoutes(
     if (!parsed.success) {
       return reply.status(400).send({
         message: "Invalid chat payload",
+        code: "invalid_chat_payload",
+        requestId: request.id,
         issues: parsed.error.issues
       });
     }
 
-    const result = await copilotService.chat(parsed.data);
-    return reply.send(result);
+    try {
+      const result = await copilotService.chat(parsed.data);
+      return reply.send(result);
+    } catch (error) {
+      request.log.error({ error, requestId: request.id }, "Copilot route failed");
+      return reply.status(502).send({
+        message: "Copilot response unavailable",
+        code: "copilot_unavailable",
+        requestId: request.id
+      });
+    }
   });
 }

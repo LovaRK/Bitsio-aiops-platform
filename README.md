@@ -14,6 +14,8 @@ Production-ready AIOps web platform for bitsIO Inc. with AI-driven observability
   - OpenRouter (prod)
   - Gemini (fallback)
   - Heuristic local fallback for demo reliability
+- Prompt guardrails and lightweight TTL caching for stable demo latency/cost
+- Request ID propagation (`x-request-id`) and standardized API error payloads
 - Firebase magic-link auth + guest mode
 - Firestore integration points for sessions and audit logs
 

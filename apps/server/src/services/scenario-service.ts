@@ -7,35 +7,53 @@ import {
 import { getScenarioById, listScenarios } from "@bitsio/telemetry";
 
 import type { SessionStore } from "./firestore-service";
+import { enforcePromptCharLimit } from "../utils/prompt-guard";
+import { TTLCache } from "../utils/ttl-cache";
+
+export interface ScenarioRunOutput {
+  scenario: ReturnType<typeof getScenarioById>;
+  timeline: ReturnType<typeof buildDecisionTimeline>;
+  reasoning: AIReasoning;
+  provider: string;
+  policyVerdict: "allow" | "manual-review";
+}
 
 export interface ScenarioService {
   list: typeof listScenarios;
-  runScenario(id: ScenarioKind): Promise<{
-    scenario: ReturnType<typeof getScenarioById>;
-    timeline: ReturnType<typeof buildDecisionTimeline>;
-    reasoning: AIReasoning;
-    provider: string;
-    policyVerdict: "allow" | "manual-review";
-  }>;
+  runScenario(id: ScenarioKind): Promise<ScenarioRunOutput>;
 }
 
 export function createScenarioService(
   gateway: LLMGateway,
   sessionStore: SessionStore,
-  timeoutMs: number
+  options: {
+    timeoutMs: number;
+    promptMaxChars: number;
+    cacheTtlMs: number;
+  }
 ): ScenarioService {
+  const runCache = new TTLCache<ScenarioKind, ScenarioRunOutput>(options.cacheTtlMs);
+
   return {
     list: listScenarios,
     async runScenario(id) {
+      const cached = runCache.get(id);
+      if (cached) {
+        return cached;
+      }
+
       const scenario = getScenarioById(id);
-      const prompt = buildReasoningPrompt(scenario);
+      const prompt = enforcePromptCharLimit(
+        buildReasoningPrompt(scenario),
+        options.promptMaxChars
+      );
 
       const { reasoning, provider } = await gateway.generateReasoning({
         prompt,
         options: {
           temperature: 0.2,
           maxTokens: 280,
-          timeoutMs
+          timeoutMs: options.timeoutMs
         }
       });
 
@@ -53,13 +71,16 @@ export function createScenarioService(
         confidence: reasoning.confidence
       });
 
-      return {
+      const result: ScenarioRunOutput = {
         scenario,
         timeline,
         reasoning,
         provider,
         policyVerdict
       };
+
+      runCache.set(id, result);
+      return result;
     }
   };
 }

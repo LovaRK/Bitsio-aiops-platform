@@ -16,20 +16,31 @@ export function registerSessionRoutes(app: FastifyInstance, sessionStore: Sessio
     if (!parsed.success) {
       return reply.status(400).send({
         message: "Invalid session payload",
+        code: "invalid_session_payload",
+        requestId: request.id,
         issues: parsed.error.issues
       });
     }
 
-    await sessionStore.saveSession({
-      ...parsed.data,
-      createdAt: new Date().toISOString()
-    });
+    try {
+      await sessionStore.saveSession({
+        ...parsed.data,
+        createdAt: new Date().toISOString()
+      });
 
-    await sessionStore.addAuditLog("session.upsert", {
-      uid: parsed.data.uid,
-      mode: parsed.data.mode
-    });
+      await sessionStore.addAuditLog("session.upsert", {
+        uid: parsed.data.uid,
+        mode: parsed.data.mode
+      });
 
-    return reply.send({ ok: true });
+      return reply.send({ ok: true });
+    } catch (error) {
+      request.log.error({ error, requestId: request.id }, "Session route failed");
+      return reply.status(503).send({
+        message: "Session persistence unavailable",
+        code: "session_persistence_unavailable",
+        requestId: request.id
+      });
+    }
   });
 }

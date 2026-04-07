@@ -4,6 +4,8 @@ import {
 } from "@bitsio/ai";
 import type { ScenarioKind } from "@bitsio/domain";
 import { getScenarioById } from "@bitsio/telemetry";
+import { enforcePromptCharLimit } from "../utils/prompt-guard";
+import { TTLCache } from "../utils/ttl-cache";
 
 export interface CopilotChatInput {
   scenarioId: ScenarioKind;
@@ -17,17 +19,35 @@ export interface CopilotChatOutput {
   provider: string;
 }
 
-export function createCopilotService(gateway: LLMGateway, timeoutMs: number) {
+export function createCopilotService(
+  gateway: LLMGateway,
+  options: {
+    timeoutMs: number;
+    promptMaxChars: number;
+    cacheTtlMs: number;
+  }
+) {
+  const answerCache = new TTLCache<string, CopilotChatOutput>(options.cacheTtlMs);
+
   return {
     async chat(input: CopilotChatInput): Promise<CopilotChatOutput> {
+      const cacheKey = `${input.scenarioId}:${normalizeQuestion(input.question)}`;
+      const cached = answerCache.get(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
       const scenario = getScenarioById(input.scenarioId);
       const retrievedContext = retrieveContext(input.question, scenario.docs, scenario.telemetry.logs.map((log) => log.message));
-      const prompt = buildCopilotPrompt({
-        scenario,
-        question: input.question,
-        retrievedContext,
-        history: input.history
-      });
+      const prompt = enforcePromptCharLimit(
+        buildCopilotPrompt({
+          scenario,
+          question: input.question,
+          retrievedContext,
+          history: input.history
+        }),
+        options.promptMaxChars
+      );
 
       try {
         const { text, provider } = await gateway.generate({
@@ -35,21 +55,27 @@ export function createCopilotService(gateway: LLMGateway, timeoutMs: number) {
           options: {
             temperature: 0.1,
             maxTokens: 320,
-            timeoutMs
+            timeoutMs: options.timeoutMs
           }
         });
 
-        return {
+        const output: CopilotChatOutput = {
           answer: text,
           citations: retrievedContext,
           provider
         };
+
+        answerCache.set(cacheKey, output);
+        return output;
       } catch {
-        return {
+        const fallback: CopilotChatOutput = {
           answer: fallbackAnswer(input.question, scenario.summary),
           citations: retrievedContext,
           provider: "fallback-local"
         };
+
+        answerCache.set(cacheKey, fallback, Math.min(options.cacheTtlMs, 20_000));
+        return fallback;
       }
     }
   };
@@ -81,4 +107,8 @@ function tokenize(value: string): string[] {
 
 function fallbackAnswer(question: string, summary: string): string {
   return `LLM providers are temporarily unavailable. Based on scenario context: ${summary}. Focus first on validating service saturation, then execute controlled remediation. User question: ${question}`;
+}
+
+function normalizeQuestion(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
 }

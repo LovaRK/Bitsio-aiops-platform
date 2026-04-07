@@ -19,7 +19,9 @@ export function registerScenarioRoutes(app: FastifyInstance, scenarioService: Sc
 
     if (!paramsResult.success) {
       return reply.status(400).send({
-        message: "Invalid scenario id"
+        message: "Invalid scenario id",
+        code: "invalid_scenario_id",
+        requestId: request.id
       });
     }
 
@@ -29,7 +31,9 @@ export function registerScenarioRoutes(app: FastifyInstance, scenarioService: Sc
     } catch (error) {
       request.log.error(error, "Failed to run scenario");
       return reply.status(502).send({
-        message: "Unable to generate scenario reasoning at this time"
+        message: "Unable to generate scenario reasoning at this time",
+        code: "scenario_execution_failed",
+        requestId: request.id
       });
     }
   });
