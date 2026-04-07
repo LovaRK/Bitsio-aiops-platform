@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { useEffect, useState } from "react";
 
+import { isLocalDemoMode } from "../lib/app-mode";
 import { auth, isFirebaseConfigured } from "../lib/firebase";
 import { AUTH_EMAIL_KEY, getOrCreateGuestId } from "../lib/session";
 import type { SessionState } from "../store/use-aiops-store";
@@ -18,6 +19,13 @@ export function useAuthSession(setSession: (session: SessionState) => Promise<vo
   const [authNote, setAuthNote] = useState("Guest demo mode available");
 
   useEffect(() => {
+    if (isLocalDemoMode) {
+      const guestId = getOrCreateGuestId();
+      void setSession({ uid: guestId, mode: "guest" });
+      setAuthNote("Local demo mode active. Authentication and Firebase quota usage are disabled.");
+      return;
+    }
+
     const authClient = auth;
 
     if (!isFirebaseConfigured || !authClient) {
@@ -75,6 +83,11 @@ export function useAuthSession(setSession: (session: SessionState) => Promise<vo
   };
 
   const onSendMagicLink = async () => {
+    if (isLocalDemoMode) {
+      setAuthNote("Magic link is disabled in local demo mode.");
+      return;
+    }
+
     if (!auth || !isFirebaseConfigured) {
       setAuthNote("Firebase auth is not configured.");
       return;
@@ -100,6 +113,13 @@ export function useAuthSession(setSession: (session: SessionState) => Promise<vo
   };
 
   const onSignOut = async () => {
+    if (isLocalDemoMode) {
+      const guestId = getOrCreateGuestId();
+      await setSession({ uid: guestId, mode: "guest" });
+      setAuthNote("Local demo mode keeps guest session active.");
+      return;
+    }
+
     try {
       if (auth) {
         await signOut(auth);
@@ -114,6 +134,7 @@ export function useAuthSession(setSession: (session: SessionState) => Promise<vo
   };
 
   return {
+    authEnabled: !isLocalDemoMode && isFirebaseConfigured,
     emailInput,
     setEmailInput,
     authNote,

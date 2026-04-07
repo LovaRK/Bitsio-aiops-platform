@@ -27,6 +27,7 @@ async function bootstrap() {
   const gateway = createGatewayFromEnv({
     runtime: env.llmRuntime,
     timeoutMs: env.llmTimeoutMs,
+    allowCloudProviders: env.allowCloudProviders,
     ollamaBaseUrl: env.ollamaBaseUrl,
     ollamaModel: env.ollamaModel,
     openrouterApiKey: env.openrouterApiKey,
@@ -71,6 +72,16 @@ async function bootstrap() {
     port: env.port,
     host: "0.0.0.0"
   });
+
+  app.log.info(
+    {
+      appMode: env.appMode,
+      llmRuntime: env.llmRuntime,
+      allowCloudProviders: env.allowCloudProviders,
+      firestoreEnabled: env.firestoreEnabled
+    },
+    "Runtime mode configured"
+  );
 }
 
 bootstrap().catch((error) => {

@@ -9,6 +9,7 @@ loadIfExists(path.resolve(process.cwd(), "../../.env"));
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  APP_MODE: z.enum(["local-demo", "production"]).optional(),
   PORT: z.coerce.number().default(8080),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   LLM_RUNTIME: z.enum(["ollama", "openrouter", "gemini"]).optional(),
@@ -31,13 +32,19 @@ const envSchema = z.object({
 });
 
 const parsed = envSchema.parse(process.env);
+const appMode = parsed.APP_MODE ?? (parsed.NODE_ENV === "production" ? "production" : "local-demo");
+const isProductionMode = appMode === "production";
+const llmRuntime = isProductionMode
+  ? parsed.LLM_RUNTIME ?? "openrouter"
+  : "ollama";
 
 export const env = {
+  appMode,
   nodeEnv: parsed.NODE_ENV,
   port: parsed.PORT,
   corsOrigin: parsed.CORS_ORIGIN,
-  llmRuntime:
-    parsed.LLM_RUNTIME ?? (parsed.NODE_ENV === "production" ? "openrouter" : "ollama"),
+  llmRuntime,
+  allowCloudProviders: isProductionMode,
   llmTimeoutMs: parsed.LLM_TIMEOUT_MS,
   llmMaxPromptChars: parsed.LLM_MAX_PROMPT_CHARS,
   scenarioCacheTtlMs: parsed.SCENARIO_CACHE_TTL_MS,
@@ -50,7 +57,7 @@ export const env = {
   openrouterAppName: parsed.OPENROUTER_APP_NAME,
   geminiApiKey: parsed.GEMINI_API_KEY,
   geminiModel: parsed.GEMINI_MODEL,
-  firestoreEnabled: parsed.FIRESTORE_ENABLED.toLowerCase() === "true",
+  firestoreEnabled: isProductionMode && parsed.FIRESTORE_ENABLED.toLowerCase() === "true",
   firebaseProjectId: parsed.FIREBASE_PROJECT_ID,
   firebaseClientEmail: parsed.FIREBASE_CLIENT_EMAIL,
   firebasePrivateKey: parsed.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n")

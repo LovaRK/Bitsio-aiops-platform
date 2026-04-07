@@ -31,7 +31,7 @@ export default function HomePage() {
     setSession
   } = useAIOpsStore();
 
-  const { emailInput, setEmailInput, authNote, onGuestMode, onSendMagicLink, onSignOut } =
+  const { authEnabled, emailInput, setEmailInput, authNote, onGuestMode, onSendMagicLink, onSignOut } =
     useAuthSession(setSession);
 
   const telemetry = runData?.scenario.telemetry ?? null;
@@ -76,20 +76,6 @@ export default function HomePage() {
             <span className="rounded-lg border border-panelSoft bg-bg/50 px-3 py-2 text-xs text-muted">
               {headerIdentity}
             </span>
-            <input
-              value={emailInput}
-              onChange={(event) => setEmailInput(event.target.value)}
-              type="email"
-              placeholder="Email for magic link"
-              className="w-52 rounded-lg border border-panelSoft bg-bg px-3 py-2 text-xs text-text outline-none focus:border-teal"
-            />
-            <button
-              type="button"
-              onClick={onSendMagicLink}
-              className="rounded-lg border border-teal/60 bg-teal/15 px-3 py-2 text-xs font-semibold text-teal"
-            >
-              Magic Link
-            </button>
             <button
               type="button"
               onClick={onGuestMode}
@@ -97,13 +83,35 @@ export default function HomePage() {
             >
               Guest Mode
             </button>
-            <button
-              type="button"
-              onClick={onSignOut}
-              className="rounded-lg border border-panelSoft bg-bg px-3 py-2 text-xs font-semibold text-muted"
-            >
-              Sign Out
-            </button>
+            {authEnabled ? (
+              <>
+                <input
+                  value={emailInput}
+                  onChange={(event) => setEmailInput(event.target.value)}
+                  type="email"
+                  placeholder="Email for magic link"
+                  className="w-52 rounded-lg border border-panelSoft bg-bg px-3 py-2 text-xs text-text outline-none focus:border-teal"
+                />
+                <button
+                  type="button"
+                  onClick={onSendMagicLink}
+                  className="rounded-lg border border-teal/60 bg-teal/15 px-3 py-2 text-xs font-semibold text-teal"
+                >
+                  Magic Link
+                </button>
+                <button
+                  type="button"
+                  onClick={onSignOut}
+                  className="rounded-lg border border-panelSoft bg-bg px-3 py-2 text-xs font-semibold text-muted"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <span className="rounded-lg border border-teal/40 bg-teal/10 px-3 py-2 text-xs font-semibold text-teal">
+                Local Demo Mode
+              </span>
+            )}
           </div>
         </div>
         <p className="mt-3 text-xs text-mint">{authNote}</p>

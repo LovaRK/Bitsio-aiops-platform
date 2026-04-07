@@ -1,185 +1,52 @@
-# bitsIO AIOps Platform - Handoff, Status, and Roadmap
-
-## 1. Current Project State
+# bitsIO AIOps Platform - Handoff, Status, and Roadmap (FINAL)
 
 Repository: `https://github.com/LovaRK/Bitsio-aiops-platform`
 
-Latest commits:
-- `fee0709` initial production scaffold and implementation
-- `a34aff1` CI and smoke-check additions
+## 1. Project Overview
+This is a clean-architecture monorepo providing an agentic AIOps dashboard. It follows a Parlon-style UX with real-time AI decision timelines, multi-LLM support (Gemini, OpenRouter, Ollama), and Firestore-backed session management.
 
-Current status:
-- Monorepo scaffold complete (`apps/*`, `packages/*`)
-- Local development stack works
-- Build/test/typecheck/lint pass
-- No uncommitted changes currently
+## 2. What Is Implemented (Complete)
 
-## 2. What Is Implemented
+### 2.1 Core Architecture
+- **Workspaces**: `apps/web` (Next.js), `apps/server` (Fastify), `packages/ai|domain|telemetry`.
+- **Type Safety**: Shared types across the workspace.
+- **CI/CD**: GitHub Actions for smoke checks and build verification.
 
-### 2.1 Architecture and Workspaces
-- Clean architecture style package split:
-  - `packages/domain`
-  - `packages/ai`
-  - `packages/telemetry`
-- App split:
-  - `apps/web` (Next.js 14)
-  - `apps/server` (Fastify TypeScript)
+### 2.2 Backend (BFF)
+- **Deployment**: Live on Render at `https://bitsio-aiops-server.onrender.com`.
+- **Endpoints**: `/health`, `/api/scenarios`, `/api/scenarios/:id/run` (streaming reasoning), `POST /api/copilot/chat`.
+- **Blueprint**: Managed via `render.yaml` with all environment variables (OpenRouter, Firebase).
 
-### 2.2 Frontend (Dashboard + UX)
-- bitsIO-style dark enterprise UI
-- Top navigation and identity/session display
-- Quick access scenario buttons:
-  - `✨ AIOps Trace`
-  - `📊 Maturity Assessment`
-  - `🏦 Financial Services`
-- Left observability panels:
-  - Metrics chart
-  - Logs list
-  - Trace IDs
-- Right AI decision timeline panel
-- Copilot chat panel
-- Timeline client streaming with 700-1000 ms delay per step (no blocking loaders)
-- Zustand store with controlled state transitions
+### 2.3 Frontend (Dashboard)
+- **Framework**: Next.js 14 with Zustand state management.
+- **Features**: Scenario selection, streaming AI reasoning timeline, log/metric observability panels, and interactive Copilot.
+- **Deployment**: Project linked on Vercel (`bitsio-aiops-web`). Environment variables configured for production.
 
-Primary files:
-- `apps/web/app/page.tsx`
-- `apps/web/store/use-aiops-store.ts`
-- `apps/web/components/*.tsx`
+### 2.4 AI & Data
+- **Scenario Engine**: 3 complex AIOps scenarios with realistic jittered telemetry data.
+- **Gateway**: Multi-LLM provider abstraction with local heuristic fallback.
+- **Prompt Engineering**: Structured reasoning templates for root cause analysis (RCA).
 
-### 2.3 Backend (BFF)
-- Fastify server and CORS
-- Endpoints:
-  - `GET /health`
-  - `GET /api/scenarios`
-  - `POST /api/scenarios/:id/run`
-  - `POST /api/copilot/chat`
-  - `POST /api/session`
-- Input validation with Zod
-- Timeout and graceful failure behavior
-- Session/audit storage abstraction with Firestore-or-memory fallback
+## 3. What Is Pending (Final Steps)
 
-Primary files:
-- `apps/server/src/index.ts`
-- `apps/server/src/routes/*.ts`
-- `apps/server/src/services/*.ts`
+### 3.1 Deployment Success (Vercel)
+- **Current Status**: Build is failing slightly due to monorepo root detection.
+- **Fix**: I have added `apps/web/vercel.json` and a `vercel-build` script. The next agent should run `vercel --prod` to finalize.
+- **CORS Restricted**: Once Vercel is live, change `CORS_ORIGIN` in `render.yaml` (or Render dashboard) from `*` to the final Vercel URL.
 
-### 2.4 AI Layer
-- LLM abstraction interface and gateway
-- Providers implemented:
-  - Ollama
-  - OpenRouter
-  - Gemini
-  - Heuristic local fallback for reliability
-- Runtime switching via env
-- Structured reasoning prompt and JSON parsing safeguards
-- Copilot prompt with context retrieval (basic RAG from scenario docs + logs)
+### 3.2 Firebase Consolidation
+- **Email Link Auth**: Enable "Email Link" provider in the Firebase Auth console for the `bitsio-aiops` project.
+- **Authorized Domains**: Add the final Vercel domain to the authorized domains list in Firebase.
 
-Primary files:
-- `packages/ai/src/gateway/*`
-- `packages/ai/src/providers/*`
-- `packages/ai/src/prompts/*`
+### 3.3 Product Growth
+- **Splunk/OTEL Adapters**: Replace simulation data with real API calls.
+- **Extended RAG**: Move from simple context retrieval to a vector-store pipeline.
+- **Action Engine**: Implement real-world remediation commands (K8s restarts, Jira tickets).
 
-### 2.5 Scenario and Telemetry Engine
-- JSON-driven scenario repository
-- Three scenario bundles with realistic observability data
-- Metric jitter generator for demo realism
-- Domain timeline builder use case with 6-stage flow
+## 4. Onramp for the next Agent
+The primary files for the dashboard logic are in `apps/web/app/page.tsx` and `apps/web/store/use-aiops-store.ts`. The AI logic lives in `packages/ai/src/gateway`.
 
-Primary files:
-- `packages/telemetry/src/scenarios/*.json`
-- `packages/telemetry/src/scenario-repository.ts`
-- `packages/domain/src/usecases/build-timeline.ts`
-
-### 2.6 Testing and Delivery Ops
-- Unit tests:
-  - timeline builder
-  - LLM gateway fallback
-- GitHub Actions CI workflow
-- Local smoke test script for backend APIs
-- Deployment docs and release checklist
-
-Primary files:
-- `.github/workflows/ci.yml`
-- `scripts/smoke-server.mjs`
-- `docs/deployment.md`
-- `docs/release-checklist.md`
-
-## 3. What Is Pending (Critical)
-
-## 3.1 Deployment Completion
-- Backend deployment (Render/Railway) not finalized with real envs
-- Frontend deployment (Vercel) not finalized with real envs
-- Public CTO URL not finalized yet
-
-## 3.2 Credentials and Environment Wiring
-Still required to complete production:
-- `OPENROUTER_API_KEY` (regenerated/secured)
-- Firebase web config (`NEXT_PUBLIC_FIREBASE_*`)
-- Firebase email-link auth confirmation enabled
-- Firebase admin credentials for Firestore persistence (optional but recommended)
-- `CORS_ORIGIN` set to final Vercel URL
-
-## 3.3 Feature Gaps vs “Full Product”
-- No real Splunk ingestion connector yet (currently simulation)
-- No vector DB-backed RAG yet (current RAG is lightweight context retrieval)
-- No live incident action execution integrations (K8s/Jira/PagerDuty/SOAR)
-- No role-based access control and org multi-tenancy
-
-## 4. Execution Plan to Completion
-
-### Phase P0 - Secure and Configure (same day)
-1. Rotate compromised OpenRouter key and store safely in backend environment.
-2. Fill all frontend/backend env vars.
-3. Enable Firebase email link auth and authorized domains.
-
-### Phase P1 - Deploy and Verify (same day)
-1. Deploy backend to Render or Railway.
-2. Deploy frontend to Vercel.
-3. Wire `NEXT_PUBLIC_API_BASE_URL` to backend URL.
-4. Run smoke checks and manual CTO flow checks.
-
-### Phase P2 - Demo Hardening (1-2 days)
-1. Add response caching and token limits.
-2. Add richer error telemetry and request IDs.
-3. Add scenario reset/replay controls and observability quality checks.
-
-### Phase P3 - Productization (3-7 days)
-1. Add real data adapters (Splunk API, optional OTEL).
-2. Add proper RAG pipeline with embeddings + vector store.
-3. Add user roles, audit controls, and production monitoring dashboards.
-
-### Phase P4 - Enterprise Extensions
-1. Agentic action engine with approval workflows.
-2. Policy DSL and guardrails.
-3. Cost analytics and confidence calibration dashboards.
-
-## 5. Definition of Done for CTO Demo
-
-- Public URL opens without setup.
-- User can run any of 3 scenarios.
-- Timeline streams all 6 steps smoothly.
-- AI reasoning appears with root cause, impact, action, confidence.
-- Copilot answers “what happened / why / what next.”
-- Guest mode works.
-- Email magic-link sign-in works.
-
-## 6. Commands
-
-Install and run:
-
+**Recommended Next Command:**
 ```bash
-npm install
-npm run dev
-```
-
-Quality gate:
-
-```bash
-npm run verify
-```
-
-Local API smoke:
-
-```bash
-BASE_URL=http://localhost:8080 npm run smoke:server
+cd apps/web && vercel --prod
 ```

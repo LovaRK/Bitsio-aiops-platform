@@ -11,6 +11,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: APP_MODE
+        value: production
       - key: PORT
         value: 8080
       - key: LLM_RUNTIME

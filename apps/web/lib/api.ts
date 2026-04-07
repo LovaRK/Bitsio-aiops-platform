@@ -10,14 +10,16 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080"
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort("timeout"), 15_000);
+  const hasBody = typeof init?.body !== "undefined";
+  const headers: HeadersInit = {
+    ...(hasBody ? { "Content-Type": "application/json" } : {}),
+    ...(init?.headers ?? {})
+  };
 
   try {
     const response = await fetch(`${API_BASE}${path}`, {
       ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...(init?.headers ?? {})
-      },
+      headers,
       signal: controller.signal,
       cache: "no-store"
     });

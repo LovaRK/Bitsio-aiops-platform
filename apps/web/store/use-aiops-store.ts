@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 
+import { isLocalDemoMode } from "../lib/app-mode";
 import { chatWithCopilot, fetchScenarios, runScenario, upsertSession } from "../lib/api";
 import { streamTimelineSteps } from "../lib/timeline-playback";
 import type { ChatMessage, ScenarioId, ScenarioRunResponse, ScenarioSummary, TimelineStep } from "../types/api";
@@ -152,6 +153,10 @@ export const useAIOpsStore = create<AIOpsState>((set, get) => ({
   },
   setSession: async (session) => {
     set({ session });
+
+    if (isLocalDemoMode) {
+      return;
+    }
 
     if (session.mode !== "none") {
       try {

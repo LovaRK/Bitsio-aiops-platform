@@ -69,6 +69,8 @@ Use root `.env.example` as the source of truth.
 
 Core variables:
 
+- `APP_MODE` (`local-demo` for local, `production` for CTO/public URL)
+- `NEXT_PUBLIC_APP_MODE` (`local-demo` locally, `production` in Vercel production)
 - `NEXT_PUBLIC_API_BASE_URL`
 - `LLM_RUNTIME` (`ollama` for local, `openrouter` for production)
 - `OPENROUTER_API_KEY`
@@ -157,6 +159,7 @@ Option B: Manual setup:
 - Recommended low-cost model for OpenRouter:
   - `openai/gpt-4o-mini`
 - Estimated LLM spend target remains under `$20/month` for demo traffic.
+- In `local-demo` mode, auth and cloud-provider quota usage are disabled by default.
 
 ## CI
 
@@ -175,3 +178,7 @@ Option B: Manual setup:
   - `docs/agentic-master-prompt.md`
 - Deployment readiness checklist:
   - `docs/deployment/cto-demo-checklist.md`
+- Demo playbook (real-world scenarios + talk track):
+  - `docs/demo/real-world-demo-playbook.md`
+- Scenario test commands:
+  - `docs/demo/scenario-test-commands.md`

@@ -1,96 +1,37 @@
-# Agentic AI Master Prompt (Continuation Prompt)
+# Master Prompt for the next Agentic AI
 
-Use this prompt with Codex/Antigravity/other agentic systems to continue delivery from current repo state.
+You are an expert full-stack developer and DevOps engineer specialized in AIOps platforms. Your task is to finalize the deployment and production hardening for the `bitsio-aiops-platform`.
 
----
+## 1. Context
+- **Monorepo**: Next.js (web), Fastify (server), and domain-driven packages.
+- **Backend Status**: Live on Render at `https://bitsio-aiops-server.onrender.com`.
+- **Frontend Status**: Linked to Vercel but build is failing. Fixed with a new `vercel.json` and `vercel-build` script.
 
-You are a senior staff-level full-stack engineer and system architect.
+## 2. Your Immediate Tasks
 
-Continue implementation in the existing repository:
-- `/Users/ramakrishna/Desktop/bitsio-aiops-platform`
-- GitHub: `https://github.com/LovaRK/Bitsio-aiops-platform`
+### T1: Finalize Vercel Build
+Run the following to finalize the frontend deployment:
+```bash
+cd apps/web && vercel --prod
+```
+Ensure that the `NEXT_PUBLIC_API_BASE_URL` is correctly applied during this build.
 
-Your mission is to complete deployment-ready delivery for a bitsIO-branded AIOps platform inspired by Parlon-style interaction patterns, without copying Parlon design/assets 1:1.
+### T2: Secure CORS
+Once the Vercel URL is known (e.g., `https://bitsio-aiops-web.vercel.app`):
+1. Update `render.yaml` with the exact URL.
+2. Update the Render service environment variable `CORS_ORIGIN`.
 
-## Non-negotiable constraints
-- Keep current tech stack:
-  - Frontend: Next.js 14 App Router + TypeScript + Tailwind + Zustand + Recharts
-  - Backend: Node.js Fastify + TypeScript
-  - AI providers: Ollama (dev), OpenRouter (prod), Gemini fallback
-  - Auth: Firebase email magic link + guest mode
-  - Storage: Firestore optional for sessions/audit logs
-- Preserve clean architecture package split:
-  - `apps/web`, `apps/server`, `packages/domain`, `packages/ai`, `packages/telemetry`
-- Do not expose API keys on frontend.
-- Keep timeline rendering O(n) and step-streamed UX (700-1000ms delay).
-- Prioritize reliability for CTO demo over adding complex new architecture.
+### T3: Firebase Configuration
+1. Open the Firebase Console for project `bitsio-aiops`.
+2. Enable "Email Link" Auth.
+3. Add the Vercel domain to "Authorized Domains".
 
-## First task: audit current implementation
-1. Read these files first:
-   - `README.md`
-   - `docs/handoff-roadmap.md`
-   - `docs/deployment.md`
-   - `docs/release-checklist.md`
-2. Validate current state by running:
-   - `npm run verify`
-3. Report implemented vs pending before code changes.
+## 3. Product Hardening
+- **Logs & Observability**: Enhance the log visualization in `apps/web/components/observability-panel.tsx` to include color-coded severity levels.
+- **Scenario Enrichment**: Add a 4th scenario related to "Database Deadlock" in `packages/telemetry/src/scenarios/`.
 
-## Primary delivery targets
-1. Finalize deployment:
-   - Backend on Render or Railway
-   - Frontend on Vercel
-2. Wire all required env variables
-3. Validate end-to-end public URL flow:
-   - scenario execution
-   - timeline streaming
-   - copilot response
-   - guest mode
-   - email magic-link login
-4. Add minimal hardening:
-   - request IDs
-   - robust API error surfaces
-   - small response caching for repeated prompts
-   - token-size guardrails
-
-## Existing functional baseline (must preserve)
-- 3 quick scenarios:
-  - aiops-trace
-  - maturity-assessment
-  - financial-services
-- 6 timeline stages:
-  - trigger
-  - context_retrieval
-  - reasoning
-  - policy_check
-  - action_execution
-  - outcome
-- AI reasoning schema:
-  - root_cause
-  - impact
-  - recommended_action
-  - confidence
-
-## Coding quality requirements
-- TypeScript strict-safe behavior
-- Input validation with Zod
-- Keep components memoized where useful
-- Keep backend routes thin and use service/usecase layers
-- Add/update tests for new logic
-- Keep all docs updated when behavior changes
-
-## Deliverables format
-At completion, provide:
-1. What changed (by file path)
-2. What was verified (commands + result)
-3. Remaining risks
-4. Exact deployment steps with env keys list
-5. Final public URLs
-
-## If blocked
-If any secrets are missing, output a concise template requesting only missing values, then continue all non-blocked tasks.
+## 4. Design Aesthetics
+The UI follows a strict "Enterprise Dark Glassmorphism" aesthetic. Maintain consistent shadows, glass backdrops, and vibrant accent colors (Primary: `#00d2ff`, Secondary: `#9d50bb`).
 
 ---
-
-Optional greenfield prompt snippet (only if rebuilding from scratch):
-
-"Build a production-ready AIOps platform for bitsIO Inc. with Next.js 14 + Fastify + TypeScript, clean architecture, multi-LLM abstraction (Ollama/OpenRouter/Gemini), Firebase magic link + guest mode, JSON-driven observability scenarios, streamed AI decision timeline, and deploy to Vercel + Render with full docs and tests."
+Proceed by running the Vercel deployment first.

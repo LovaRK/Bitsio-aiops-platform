@@ -9,6 +9,7 @@ import { LLMGateway } from "./llm-gateway";
 export interface GatewayEnv {
   runtime: "ollama" | "openrouter" | "gemini";
   timeoutMs: number;
+  allowCloudProviders: boolean;
   ollamaBaseUrl: string;
   ollamaModel: string;
   openrouterApiKey: string;
@@ -39,11 +40,20 @@ export function createGatewayFromEnv(env: GatewayEnv): LLMGateway {
 
   const heuristic = new HeuristicProvider();
 
-  const providerOrder = selectProviderOrder(env.runtime, [ollama, openrouter, gemini, heuristic]);
+  const providerOrder = selectProviderOrder(env.runtime, env.allowCloudProviders, [
+    ollama,
+    openrouter,
+    gemini,
+    heuristic
+  ]);
   return new LLMGateway(providerOrder);
 }
 
-function selectProviderOrder(runtime: GatewayEnv["runtime"], providers: LLMProvider[]): LLMProvider[] {
+function selectProviderOrder(
+  runtime: GatewayEnv["runtime"],
+  allowCloudProviders: boolean,
+  providers: LLMProvider[]
+): LLMProvider[] {
   const byName = new Map(providers.map((provider) => [provider.name, provider]));
 
   const orders: Record<GatewayEnv["runtime"], string[]> = {
@@ -52,7 +62,10 @@ function selectProviderOrder(runtime: GatewayEnv["runtime"], providers: LLMProvi
     gemini: ["gemini", "openrouter", "ollama", "heuristic-local"]
   };
 
-  return orders[runtime]
+  const localOnlyOrder: string[] = ["ollama", "heuristic-local"];
+  const selectedOrder = allowCloudProviders ? orders[runtime] : localOnlyOrder;
+
+  return selectedOrder
     .map((name) => byName.get(name))
     .filter((provider): provider is LLMProvider => Boolean(provider));
 }
