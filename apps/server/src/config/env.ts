@@ -10,7 +10,7 @@ loadIfExists(path.resolve(process.cwd(), "../../.env"));
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   APP_MODE: z.enum(["local-demo", "production"]).optional(),
-  PORT: z.coerce.number().default(8080),
+  PORT: z.coerce.number().default(10_000),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   LLM_RUNTIME: z.enum(["ollama", "openrouter", "gemini"]).optional(),
   LLM_TIMEOUT_MS: z.coerce.number().default(12_000),

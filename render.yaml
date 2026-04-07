@@ -4,7 +4,7 @@ services:
     env: node
     rootDir: .
     plan: free
-    buildCommand: npm install && npm run build -w @bitsio/server
+    buildCommand: npm install && npm run build
     startCommand: npm run start -w @bitsio/server
     autoDeploy: true
     healthCheckPath: /health
@@ -13,8 +13,6 @@ services:
         value: production
       - key: APP_MODE
         value: production
-      - key: PORT
-        value: 8080
       - key: LLM_RUNTIME
         value: openrouter
       - key: OPENROUTER_API_KEY
@@ -22,7 +20,7 @@ services:
       - key: OPENROUTER_MODEL
         value: openai/gpt-4o-mini
       - key: CORS_ORIGIN
-        value: https://<your-app>.vercel.app
+        value: https://bitsio-aiops-web.vercel.app
       - key: FIRESTORE_ENABLED
         value: "false"
       - key: FIREBASE_PROJECT_ID
