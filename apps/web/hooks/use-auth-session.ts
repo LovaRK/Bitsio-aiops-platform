@@ -7,36 +7,41 @@ import {
   signInWithEmailLink,
   signOut
 } from "firebase/auth";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { isLocalDemoMode } from "../lib/app-mode";
 import { auth, isFirebaseConfigured } from "../lib/firebase";
 import { AUTH_EMAIL_KEY, getOrCreateGuestId } from "../lib/session";
 import type { SessionState } from "../store/use-aiops-store";
 
+type AuthState = "local-demo" | "firebase-enabled" | "firebase-missing";
+
 export function useAuthSession(setSession: (session: SessionState) => Promise<void>) {
   const [emailInput, setEmailInput] = useState("");
   const [authNote, setAuthNote] = useState("Guest demo mode available");
-  const authState = isLocalDemoMode
-    ? "local-demo"
-    : isFirebaseConfigured
-      ? "firebase-enabled"
-      : "firebase-missing";
+  const authState: AuthState = resolveAuthState();
+
+  const switchToGuestMode = useCallback(
+    async (note: string) => {
+      const guestId = getOrCreateGuestId();
+      await setSession({ uid: guestId, mode: "guest" });
+      setAuthNote(note);
+    },
+    [setSession]
+  );
 
   useEffect(() => {
     if (isLocalDemoMode) {
-      const guestId = getOrCreateGuestId();
-      void setSession({ uid: guestId, mode: "guest" });
-      setAuthNote("Local demo mode active. Authentication and Firebase quota usage are disabled.");
+      void switchToGuestMode(
+        "Local demo mode active. Authentication and Firebase quota usage are disabled."
+      );
       return;
     }
 
     const authClient = auth;
 
     if (!isFirebaseConfigured || !authClient) {
-      const guestId = getOrCreateGuestId();
-      void setSession({ uid: guestId, mode: "guest" });
-      setAuthNote("Firebase not configured. Running in guest demo mode.");
+      void switchToGuestMode("Firebase not configured. Running in guest demo mode.");
       return;
     }
 
@@ -73,27 +78,23 @@ export function useAuthSession(setSession: (session: SessionState) => Promise<vo
         return;
       }
 
-      const guestId = getOrCreateGuestId();
-      await setSession({ uid: guestId, mode: "guest" });
-      setAuthNote("Using guest session");
+      await switchToGuestMode("Using guest session");
     });
 
     return () => unsubscribe();
-  }, [setSession]);
+  }, [switchToGuestMode]);
 
   const onGuestMode = async () => {
-    const guestId = getOrCreateGuestId();
-    await setSession({ uid: guestId, mode: "guest" });
-    setAuthNote("Guest mode enabled");
+    await switchToGuestMode("Guest mode enabled");
   };
 
   const onSendMagicLink = async () => {
-    if (isLocalDemoMode) {
+    if (authState === "local-demo") {
       setAuthNote("Magic link is disabled in local demo mode.");
       return;
     }
 
-    if (!auth || !isFirebaseConfigured) {
+    if (authState !== "firebase-enabled" || !auth) {
       setAuthNote("Firebase auth is not configured.");
       return;
     }
@@ -118,10 +119,8 @@ export function useAuthSession(setSession: (session: SessionState) => Promise<vo
   };
 
   const onSignOut = async () => {
-    if (isLocalDemoMode) {
-      const guestId = getOrCreateGuestId();
-      await setSession({ uid: guestId, mode: "guest" });
-      setAuthNote("Local demo mode keeps guest session active.");
+    if (authState === "local-demo") {
+      await switchToGuestMode("Local demo mode keeps guest session active.");
       return;
     }
 
@@ -133,9 +132,7 @@ export function useAuthSession(setSession: (session: SessionState) => Promise<vo
       setAuthNote("Sign out failed. Falling back to guest mode.");
     }
 
-    const guestId = getOrCreateGuestId();
-    await setSession({ uid: guestId, mode: "guest" });
-    setAuthNote("Signed out, guest mode resumed");
+    await switchToGuestMode("Signed out, guest mode resumed");
   };
 
   return {
@@ -148,4 +145,12 @@ export function useAuthSession(setSession: (session: SessionState) => Promise<vo
     onSendMagicLink,
     onSignOut
   };
+}
+
+function resolveAuthState(): AuthState {
+  if (isLocalDemoMode) {
+    return "local-demo";
+  }
+
+  return isFirebaseConfigured ? "firebase-enabled" : "firebase-missing";
 }

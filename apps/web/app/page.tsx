@@ -12,7 +12,6 @@ import {
 } from "../components";
 import { useAuthSession } from "../hooks/use-auth-session";
 import { useAIOpsStore } from "../store/use-aiops-store";
-import type { ScenarioId } from "../types/api";
 
 export default function HomePage() {
   const {
@@ -57,10 +56,6 @@ export default function HomePage() {
 
     return "No session";
   }, [session.email, session.mode]);
-
-  const onScenarioSelect = async (id: ScenarioId) => {
-    await executeScenario(id);
-  };
 
   return (
     <main className="mx-auto min-h-screen max-w-[1500px] px-4 py-6 md:px-8">
@@ -121,7 +116,7 @@ export default function HomePage() {
         <QuickAccess
           scenarios={scenarios}
           activeScenarioId={activeScenarioId}
-          onSelect={(id) => void onScenarioSelect(id)}
+          onSelect={(id) => void executeScenario(id)}
         />
       </div>
 
