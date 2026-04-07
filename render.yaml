@@ -5,7 +5,7 @@ services:
     rootDir: .
     plan: free
     buildCommand: npm install && npm run build
-    startCommand: npm run start -w @bitsio/server
+    startCommand: node apps/server/dist/index.js
     autoDeploy: true
     healthCheckPath: /health
     envVars:

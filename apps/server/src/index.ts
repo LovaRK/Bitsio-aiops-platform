@@ -15,6 +15,8 @@ import { AppError } from "./utils/app-error";
 async function bootstrap() {
   const app = Fastify({ logger: true });
 
+  app.log.info("Starting bitsIO AIOps Platform bootstrap...");
+
   await app.register(cors, {
     origin: env.corsOrigin.split(",")
   });
@@ -68,10 +70,16 @@ async function bootstrap() {
     });
   });
 
-  await app.listen({
-    port: env.port,
-    host: "0.0.0.0"
-  });
+  try {
+    const address = await app.listen({
+      port: env.port,
+      host: "0.0.0.0"
+    });
+    app.log.info(`Server successfully listening at ${address}`);
+  } catch (err) {
+    app.log.error(err, "Failed to bind to port");
+    process.exit(1);
+  }
 
   app.log.info(
     {
