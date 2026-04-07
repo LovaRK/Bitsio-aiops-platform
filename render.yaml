@@ -4,11 +4,13 @@ services:
     env: node
     rootDir: .
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm run build -w @bitsio/domain && npm run build -w @bitsio/telemetry && npm run build -w @bitsio/ai && npm run build -w @bitsio/server
     startCommand: node apps/server/dist/index.js
     autoDeploy: true
     healthCheckPath: /health
     envVars:
+      - key: NODE_VERSION
+        value: 20.11.1
       - key: NODE_ENV
         value: production
       - key: APP_MODE
