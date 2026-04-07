@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  isSignInWithEmailLink,
-  onAuthStateChanged,
-  sendSignInLinkToEmail,
-  signInWithEmailLink,
-  signOut
-} from "firebase/auth";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 
 import { CopilotPanel } from "../components/copilot-panel";
 import { LogsPanel } from "../components/logs-panel";
@@ -15,12 +8,9 @@ import { MetricsPanel } from "../components/metrics-panel";
 import { QuickAccess } from "../components/quick-access";
 import { TimelinePanel } from "../components/timeline-panel";
 import { TracePanel } from "../components/trace-panel";
-import { auth, isFirebaseConfigured } from "../lib/firebase";
+import { useAuthSession } from "../hooks/use-auth-session";
 import { useAIOpsStore } from "../store/use-aiops-store";
 import type { ScenarioId } from "../types/api";
-
-const AUTH_EMAIL_KEY = "bitsio_magic_email";
-const GUEST_UID_KEY = "bitsio_guest_uid";
 
 export default function HomePage() {
   const {
@@ -39,8 +29,8 @@ export default function HomePage() {
     setSession
   } = useAIOpsStore();
 
-  const [emailInput, setEmailInput] = useState("");
-  const [authNote, setAuthNote] = useState("Guest demo mode available");
+  const { emailInput, setEmailInput, authNote, onGuestMode, onSendMagicLink, onSignOut } =
+    useAuthSession(setSession);
 
   const telemetry = runData?.scenario.telemetry ?? null;
 
@@ -53,57 +43,6 @@ export default function HomePage() {
       void executeScenario(scenarios[0].id);
     }
   }, [activeScenarioId, executeScenario, scenarios]);
-
-  useEffect(() => {
-    const authClient = auth;
-
-    if (!isFirebaseConfigured || !authClient) {
-      const guestId = getOrCreateGuestId();
-      void setSession({ uid: guestId, mode: "guest" });
-      setAuthNote("Firebase not configured. Running in guest demo mode.");
-      return;
-    }
-
-    const completeEmailLinkSignIn = async () => {
-      if (!isSignInWithEmailLink(authClient, window.location.href)) {
-        return;
-      }
-
-      const storedEmail = window.localStorage.getItem(AUTH_EMAIL_KEY);
-      if (!storedEmail) {
-        setAuthNote("Magic link opened, but email was missing in local storage.");
-        return;
-      }
-
-      try {
-        await signInWithEmailLink(authClient, storedEmail, window.location.href);
-        window.localStorage.removeItem(AUTH_EMAIL_KEY);
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } catch {
-        setAuthNote("Magic link sign-in failed. Please request a new link.");
-      }
-    };
-
-    void completeEmailLinkSignIn();
-
-    const unsubscribe = onAuthStateChanged(authClient, async (user) => {
-      if (user?.uid) {
-        await setSession({
-          uid: user.uid,
-          email: user.email ?? undefined,
-          mode: "auth"
-        });
-        setAuthNote(user.email ? `Signed in as ${user.email}` : "Signed in");
-        return;
-      }
-
-      const guestId = getOrCreateGuestId();
-      await setSession({ uid: guestId, mode: "guest" });
-      setAuthNote("Using guest session");
-    });
-
-    return () => unsubscribe();
-  }, [setSession]);
 
   const headerIdentity = useMemo(() => {
     if (session.mode === "auth") {
@@ -119,43 +58,6 @@ export default function HomePage() {
 
   const onScenarioSelect = async (id: ScenarioId) => {
     await executeScenario(id);
-  };
-
-  const onGuestMode = async () => {
-    const guestId = getOrCreateGuestId();
-    await setSession({ uid: guestId, mode: "guest" });
-    setAuthNote("Guest mode enabled");
-  };
-
-  const onSendMagicLink = async () => {
-    if (!auth || !isFirebaseConfigured) {
-      setAuthNote("Firebase auth is not configured.");
-      return;
-    }
-
-    const email = emailInput.trim();
-    if (!email) {
-      setAuthNote("Enter an email to receive the magic link.");
-      return;
-    }
-
-    await sendSignInLinkToEmail(auth, email, {
-      url: window.location.origin,
-      handleCodeInApp: true
-    });
-
-    window.localStorage.setItem(AUTH_EMAIL_KEY, email);
-    setAuthNote(`Magic link sent to ${email}`);
-  };
-
-  const onSignOut = async () => {
-    if (auth) {
-      await signOut(auth);
-    }
-
-    const guestId = getOrCreateGuestId();
-    await setSession({ uid: guestId, mode: "guest" });
-    setAuthNote("Signed out, guest mode resumed");
   };
 
   return (
@@ -234,18 +136,4 @@ export default function HomePage() {
       </section>
     </main>
   );
-}
-
-function getOrCreateGuestId(): string {
-  const existing = window.localStorage.getItem(GUEST_UID_KEY);
-  if (existing) {
-    return existing;
-  }
-
-  const created = typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `guest-${Date.now()}`;
-
-  window.localStorage.setItem(GUEST_UID_KEY, created);
-  return created;
 }

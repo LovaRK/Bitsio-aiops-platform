@@ -6,4 +6,5 @@ export * from "./providers/gemini-provider";
 export * from "./providers/heuristic-provider";
 export * from "./providers/ollama-provider";
 export * from "./providers/openrouter-provider";
+export * from "./utils/http-client";
 export * from "./utils/safe-json";

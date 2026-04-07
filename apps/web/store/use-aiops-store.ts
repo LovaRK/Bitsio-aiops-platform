@@ -3,11 +3,12 @@
 import { create } from "zustand";
 
 import { chatWithCopilot, fetchScenarios, runScenario, upsertSession } from "../lib/api";
+import { streamTimelineSteps } from "../lib/timeline-playback";
 import type { ChatMessage, ScenarioId, ScenarioRunResponse, ScenarioSummary, TimelineStep } from "../types/api";
 
-let playbackToken = 0;
+let cancelTimelinePlayback: (() => void) | null = null;
 
-interface SessionState {
+export interface SessionState {
   uid: string;
   email?: string;
   mode: "guest" | "auth" | "none";
@@ -22,6 +23,7 @@ interface AIOpsState {
   chatMessages: ChatMessage[];
   chatBusy: boolean;
   statusText: string;
+  lastError: string | null;
   session: SessionState;
   loadScenarios: () => Promise<void>;
   executeScenario: (id: ScenarioId) => Promise<void>;
@@ -38,66 +40,79 @@ export const useAIOpsStore = create<AIOpsState>((set, get) => ({
   chatMessages: [],
   chatBusy: false,
   statusText: "Ready",
+  lastError: null,
   session: {
     uid: "",
     mode: "none"
   },
   loadScenarios: async () => {
-    const scenarios = await fetchScenarios();
-    set({
-      scenarios,
-      activeScenarioId: scenarios[0]?.id ?? null
-    });
+    try {
+      const scenarios = await fetchScenarios();
+      set({
+        scenarios,
+        activeScenarioId: scenarios[0]?.id ?? null,
+        lastError: null
+      });
+    } catch {
+      set({
+        lastError: "Unable to load scenarios",
+        statusText: "Unable to load scenarios"
+      });
+    }
   },
   executeScenario: async (id) => {
-    set({ statusText: `Running ${id} scenario...` });
-
-    const runData = await runScenario(id);
     set({
-      runData,
-      activeScenarioId: id,
-      chatMessages: [
-        {
-          role: "assistant",
-          content: `Scenario loaded: ${runData.scenario.title}. Ask me what happened, why it happened, or what to do next.`
+      statusText: `Running ${id} scenario...`,
+      lastError: null
+    });
+
+    try {
+      const runData = await runScenario(id);
+
+      set({
+        runData,
+        activeScenarioId: id,
+        chatMessages: [
+          {
+            role: "assistant",
+            content: `Scenario loaded: ${runData.scenario.title}. Ask me what happened, why it happened, or what to do next.`
+          }
+        ],
+        timelineVisible: [],
+        timelineStreaming: true,
+        statusText: `Streaming ${runData.timeline.length} decision steps...`
+      });
+
+      cancelTimelinePlayback?.();
+      cancelTimelinePlayback = streamTimelineSteps(runData.timeline, {
+        minDelayMs: 700,
+        maxDelayMs: 1000,
+        onStep: (step) => {
+          set((state) => ({
+            timelineVisible: [...state.timelineVisible, step]
+          }));
+        },
+        onComplete: () => {
+          set({
+            timelineStreaming: false,
+            statusText: `Decision complete via ${runData.provider}`
+          });
         }
-      ]
-    });
-
-    const timeline = runData.timeline;
-    playbackToken += 1;
-    const token = playbackToken;
-
-    set({
-      timelineVisible: [],
-      timelineStreaming: true,
-      statusText: `Streaming ${timeline.length} decision steps...`
-    });
-
-    const pump = (index: number) => {
-      if (token !== playbackToken) {
-        return;
-      }
-
-      if (index >= timeline.length) {
-        set({
-          timelineStreaming: false,
-          statusText: `Decision complete via ${runData.provider}`
-        });
-        return;
-      }
-
-      set((state) => ({
-        timelineVisible: [...state.timelineVisible, timeline[index]]
-      }));
-
-      const delay = 700 + Math.floor(Math.random() * 301);
-      window.setTimeout(() => pump(index + 1), delay);
-    };
-
-    pump(0);
+      });
+    } catch {
+      set({
+        timelineStreaming: false,
+        lastError: "Scenario execution failed",
+        statusText: "Scenario execution failed"
+      });
+    }
   },
   sendMessage: async (question) => {
+    const normalized = question.trim();
+    if (!normalized) {
+      return;
+    }
+
     const state = get();
     const scenarioId = state.activeScenarioId;
 
@@ -105,11 +120,11 @@ export const useAIOpsStore = create<AIOpsState>((set, get) => ({
       return;
     }
 
-    const nextMessages = [...state.chatMessages, { role: "user" as const, content: question }];
+    const nextMessages = [...state.chatMessages, { role: "user" as const, content: normalized }];
     set({ chatMessages: nextMessages, chatBusy: true });
 
     try {
-      const response = await chatWithCopilot(scenarioId, question, nextMessages);
+      const response = await chatWithCopilot(scenarioId, normalized, nextMessages);
       set((current) => ({
         chatMessages: [
           ...current.chatMessages,
@@ -118,7 +133,8 @@ export const useAIOpsStore = create<AIOpsState>((set, get) => ({
             content: `${response.answer}\n\nSources: ${response.citations.join(" | ") || "Scenario telemetry"}`
           }
         ],
-        chatBusy: false
+        chatBusy: false,
+        lastError: null
       }));
     } catch {
       set((current) => ({
@@ -129,7 +145,8 @@ export const useAIOpsStore = create<AIOpsState>((set, get) => ({
             content: "Copilot is temporarily unavailable. Please retry in a few seconds."
           }
         ],
-        chatBusy: false
+        chatBusy: false,
+        lastError: "Copilot request failed"
       }));
     }
   },
@@ -137,11 +154,17 @@ export const useAIOpsStore = create<AIOpsState>((set, get) => ({
     set({ session });
 
     if (session.mode !== "none") {
-      await upsertSession({
-        uid: session.uid,
-        email: session.email,
-        mode: session.mode
-      });
+      try {
+        await upsertSession({
+          uid: session.uid,
+          email: session.email,
+          mode: session.mode
+        });
+      } catch {
+        set({
+          lastError: "Session sync failed"
+        });
+      }
     }
   }
 }));
